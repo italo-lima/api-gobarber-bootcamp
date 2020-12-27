@@ -1,20 +1,33 @@
-const User = require('../models/User')
-const File = require('../models/File')
+import User from '../models/User';
+import File from '../models/File';
+import Cache from '../../lib/Cache';
 
 class ProviderController {
-    async index(req, res) {
-        const providers = await User.findAll({
-            where: { provider: true },
-            attributes: ['id', 'name', 'email', 'avatar_id'],
-            include: [{
-                model: File,  //mostrar informações do file de user
-                as: 'avatar', //apelido da chave
-                attributes: ['name', 'path', 'url']
-            }]
-        })
+  async index(req, res) {
+    const cached = await Cache.get('providers');
 
-        return res.json(providers)
+    if (cached) {
+      return res.json(cached);
     }
+
+    const providers = await User.findAll({
+      where: {
+        provider: true,
+      },
+      attributes: ['id', 'name', 'email', 'avatar_id'],
+      include: [
+        {
+          model: File,
+          as: 'avatar',
+          attributes: ['id', 'name', 'path', 'url'],
+        },
+      ],
+    });
+
+    Cache.set('providers', providers);
+
+    return res.json(providers);
+  }
 }
 
-module.exports = new ProviderController()
+export default new ProviderController();

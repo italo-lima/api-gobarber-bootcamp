@@ -1,44 +1,48 @@
-const nodeMailer = require('nodemailer')
-const mailConfig = require('../config/mail')
-const exphbs = require('express-handlebars')
-const nodemailerhbs = require('nodemailer-express-handlebars')
-const {resolve} = require('path')
+import nodemailer from 'nodemailer';
+import { resolve } from 'path';
+import exphbs from 'express-handlebars';
+import nodemailerhbs from 'nodemailer-express-handlebars';
 
-class Mail{
-    constructor(){
-        const {host, auth, secure, port} = mailConfig
+import mailConfig from '../config/mail';
 
-        this.transporter = nodeMailer.createTransport({
-            host,
-            port, 
-            secure,
-            auth: auth.user ? auth : null 
-        })
+class Mail {
+  constructor() {
+    const { host, port, secure, auth } = mailConfig;
 
-        this.configTemplate()
-    }
+    this.transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      auth: auth.user ? auth : null,
+    });
 
-    //template para envio de e-mail quando cancelar
-    configTemplate(){
-        const viewPath = resolve(__dirname, '..', 'app', 'views', 'emails')
+    this.configureTemplates();
+  }
 
-        this.transporter.use('compile', nodemailerhbs({
-            viewEngine: exphbs.create({
-                layoutsDir: resolve(viewPath, 'layouts'),
-                partialsDir: resolve(viewPath, 'partials'),
-                defaultLayout: 'default',
-                extname: '.hbs'
-            }),
-            viewPath,
-            extName: '.hbs',
-        }))
-    }
-    
-    sendMail(message){
-        return this.transporter.sendMail({
-            ...mailConfig.default, ...message
-        })
-    }
+  sendEmail(message) {
+    return this.transporter.sendMail({
+      ...mailConfig.default,
+      ...message,
+    });
+  }
+
+  configureTemplates() {
+    const viewPath = resolve(__dirname, '..', 'app', 'views', 'emails');
+
+    this.transporter.use(
+      'compile',
+      nodemailerhbs({
+        viewEngine: exphbs.create({
+          layoutsDir: resolve(viewPath, 'layouts'),
+          partialsDir: resolve(viewPath, 'partials'),
+          defaultLayout: 'default',
+          extname: '.hbs',
+        }),
+        viewPath,
+        extName: '.hbs',
+      })
+    );
+  }
 }
 
-module.exports = new Mail()
+export default new Mail();

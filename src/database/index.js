@@ -1,32 +1,37 @@
-const Sequelize = require('sequelize')
-const databaseConfig = require("../config/database")
-const User = require("../app/models/User")
-const File = require("../app/models/File")
-const Appointment = require("../app/models/Appointment")
+import Sequelize from 'sequelize';
+import mongoose from 'mongoose';
 
-const mongoose = require('mongoose')
+import databaseConfig from '../config/database';
 
-const models = [User, File, Appointment]
+import User from '../app/models/User';
+import File from '../app/models/File';
+import Appointment from '../app/models/Appointment';
 
+const models = [User, File, Appointment];
+
+/**
+ * Class to build the database connection
+ */
 class Database {
-    constructor() {
-        this.init()
-        this.mongo()
-    }
+  constructor() {
+    this.init();
+    this.mongo();
+  }
 
-    init() {
-        this.connection = new Sequelize(databaseConfig)
+  init() {
+    this.connection = new Sequelize(databaseConfig);
 
-        models
-        .map(model => model.init(this.connection))
-        .map(model => model.associate && model.associate(this.connection.models)) //Associação entre id de file com user
-    }
+    models
+      .map(model => model.init(this.connection))
+      .map(model => model.associate && model.associate(this.connection.models));
+  }
 
-    mongo(){
-        this.mongoConnection = mongoose.connect('mongodb://172.17.0.2:27017/goBarber',
-        {useNewUrlParser: true, useFindAndModify: true}
-        )
-    }
+  mongo() {
+    this.mongoConnection = mongoose.connect(process.env.MONGO_URL, {
+      useNewUrlParser: true,
+      useFindAndModify: true,
+    });
+  }
 }
 
-module.exports = new Database()
+export default new Database();

@@ -1,4 +1,4 @@
-const Queue = require('./lib/Queue')
+import 'dotenv/config';
+import Queue from './lib/Queue';
 
-//Ficar executando a Queue independente (monitorando em outro terminal)
-Queue.processQueue()
+Queue.processQueue();

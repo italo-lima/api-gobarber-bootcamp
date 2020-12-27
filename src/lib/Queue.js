@@ -1,42 +1,54 @@
-const Bee = require('bee-queue')
-const CancellationMail = require('../app/jobs/CancellationMail')
-const redisConfig = require('../config/redis')
+import Bee from 'bee-queue';
+import CancellationMail from '../app/jobs/CancellationMail';
+import redisConfig from '../config/redis';
 
-const jobs = [CancellationMail]
+const jobs = [CancellationMail];
 
-class Queue{
-    constructor(){
-        this.queues = {}
-        this.init()
-    }
+class Queue {
+  constructor() {
+    this.queues = {};
 
-    init(){
-        jobs.forEach(({key, handle}) => {
-            this.queues[key] = {
-                bee: new Bee(key, {
-                    redis: redisConfig
-                }),
-                handle
-            }
-        })
-    }
+    this.init();
+  }
 
-    add(queue, job){
-        return this.queues[queue].bee.createJob(job).save()
-    }
+  init() {
+    /**
+     * All tasks inside queues are called jobs
+     */
+    jobs.forEach(job => {
+      const { key, handle } = job;
+      /**
+       * Store the queue that has connection to Redis. Store also the handle, that is going to process the job
+       */
+      this.queues[key] = {
+        bee: new Bee(key, {
+          redis: redisConfig,
+        }),
+        handle,
+      };
+    });
+  }
 
-    processQueue(){
-        jobs.forEach(job => {
-            const {bee, handle} = this.queues[job.key]
+  /**
+   * Add a new job to the queue
+   * @param {string} key Unique key of the job
+   * @param {any} job Data that it's going to pass to the handle function
+   */
+  add(key, job) {
+    return this.queues[key].bee.createJob(job).save();
+  }
 
-            //.on('failed) -> fica monitorando a fila, caso encontre erro chama handleFailure
-            bee.on('failed', this.handleFailure).process(handle)
-        })
-    }
+  processQueue() {
+    jobs.forEach(job => {
+      const { bee, handle } = this.queues[job.key];
 
-    handleFailure(job, error){
-        console.log(`Queue ${job.queue.name}: Failed`, error)
-    }
+      bee.on('failed', this.handleFailure).process(handle);
+    });
+  }
+
+  handleFailure(job, err) {
+    console.log(`Queue ${job.queue.name}: FAILED`, err);
+  }
 }
 
-module.exports = new Queue()
+export default new Queue();

@@ -1,34 +1,42 @@
-const Notification = require('../schemas/Notification')
-const User = require('../models/User')
+import User from '../models/User';
+import Notification from '../schemas/Notification';
 
-class NotificationController{
-    async index(req, res){
-        
-        const isProvider = await User.findOne({
-            where: {id: req.userId, provider:true}
-        })
+class NotificationController {
+  async index(req, res) {
+    const checkIsProvider = await User.findOne({
+      where: {
+        id: req.userId,
+        provider: true,
+      },
+    });
 
-        if(!isProvider){
-            return res.status(401).json({error: 'Only provider can load notifications'})
-        }
-
-        const notifications = await Notification.find({
-           user: req.userId
-        }).sort('createdAt').limit(20)
-
-        return res.json(notifications)
+    if (!checkIsProvider) {
+      return res.status(401).json({
+        error: 'Only providers can load notifications',
+      });
     }
 
-    async update(req, res){
+    const notifications = await Notification.find({
+      user: req.userId,
+    })
+      .sort({ createdAt: 'desc' })
+      .limit(20);
 
-        const notification = await Notification.findByIdAndUpdate(
-            req.params.id,
-            {read: true},
-            {new: true}  //retorna o registro atualizado para o usuário
-            )
-        
-        res.json(notification)
-    }
+    return res.json(notifications);
+  }
+
+  async update(req, res) {
+    // const notification = await Notification.findById();
+    const { id } = req.params;
+
+    const notification = await Notification.findByIdAndUpdate(
+      id,
+      { read: true },
+      { new: true }
+    );
+
+    return res.json(notification);
+  }
 }
 
-module.exports = new NotificationController()
+export default new NotificationController();

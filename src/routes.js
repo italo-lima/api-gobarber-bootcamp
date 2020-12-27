@@ -1,39 +1,61 @@
-const { Router } = require("express")
-const UserController = require('./app/controllers/UserController')
-const SessionController = require('./app/controllers/SessionController')
-const ProviderController = require('./app/controllers/ProviderController')
-const FileController = require('./app/controllers/FileController')
-const Appointments = require('./app/controllers/AppointmentController')
-const ScheduleController = require('./app/controllers/ScheduleController')
-const NotificationController = require('./app/controllers/NotificationController')
-const AvailableController = require('./app/controllers/AvailableController')
-const authMiddleware = require('./app/middlewares/auth')
+import Router from 'express';
+import multer from 'multer';
 
-const multer = require('multer')
-const multerConfig = require('./config/multer')
-const uploads = multer(multerConfig)
+/** Controllers */
+import UserController from './app/controllers/UserController';
+import SessionController from './app/controllers/SessionController';
+import FileController from './app/controllers/FileController';
+import ProviderController from './app/controllers/ProviderController';
 
-const routes = Router()
+// Middlewares
+import authMiddleware from './app/middlewares/auth';
 
-routes.post('/sessions', SessionController.store)
-routes.post('/users', UserController.store)
+// Valitators Middlewares
+import validateUserStore from './app/validators/UserStore';
+import validateUserUpdate from './app/validators/UserUpdate';
+import validateSessionStore from './app/validators/SessionStore';
+import validateAppointmentStore from './app/validators/AppointmentStore';
 
-routes.use(authMiddleware)
+// Multer
+import multerConfig from './config/multer';
 
-routes.put('/users', UserController.update)
+// Controllers
+import AppointmentController from './app/controllers/AppointmentController';
+import ScheduleController from './app/controllers/ScheduleController';
+import NotificationController from './app/controllers/NotificationController';
+import AvailableController from './app/controllers/AvailableController';
 
-routes.get('/providers', ProviderController.index)
-routes.get('/providers/:providerId/available', AvailableController.index)
+const routes = new Router();
+const upload = multer(multerConfig);
 
-routes.get('/appointments', Appointments.index)
-routes.post('/appointments', Appointments.store)
-routes.delete('/appointments/:id', Appointments.delete)
+routes.get('/', async (req, res) => res.json({ message: 'okay' }));
 
-routes.get('/schedule', ScheduleController.index)
+routes.post('/users', validateUserStore, UserController.store);
+routes.post('/sessions', validateSessionStore, SessionController.store);
 
-routes.get('/notifications', NotificationController.index)
-routes.put('/notifications/:id', NotificationController.update)
+routes.use(authMiddleware);
 
-routes.post('/files', uploads.single('file'), FileController.store)
+routes.put('/users', validateUserUpdate, UserController.update);
 
-module.exports = routes
+// Upload files
+routes.post('/files', upload.single('file'), FileController.store);
+
+// Providers
+routes.get('/providers', ProviderController.index);
+routes.get('/providers/:providerId/available', AvailableController.index);
+
+routes.post(
+  '/appointments',
+  validateAppointmentStore,
+  AppointmentController.store
+);
+routes.get('/appointments', AppointmentController.index);
+routes.delete('/appointments/:id', AppointmentController.delete);
+
+routes.get('/schedules', ScheduleController.index);
+
+// Notifications
+routes.get('/notifications', NotificationController.index);
+routes.put('/notifications/:id', NotificationController.update);
+
+export default routes;
