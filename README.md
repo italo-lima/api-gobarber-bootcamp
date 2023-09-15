@@ -38,5 +38,5 @@ $ cd api-gobarber-bootcamp
 # Install dependencies
 $ yarn 
 # Run the project
-$ yarn start 
+$ yarn dev 
 ```
